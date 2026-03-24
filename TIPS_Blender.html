@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIPS ETF Portfolio Blender</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f9fafb; color: #111827; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 24px; font-weight: 700; }
+  .subtitle { font-size: 13px; color: #6b7280; margin-top: 4px; }
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .card-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; font-weight: 600; }
+  .fund-row { display: flex; gap: 24px; flex-wrap: wrap; }
+  .fund-chip { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .fund-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .fund-name { font-weight: 700; }
+  .fund-detail { color: #6b7280; font-size: 12px; }
+  .ctrl-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .ctrl-label { font-size: 13px; font-weight: 600; color: #374151; white-space: nowrap; }
+  input[type=range] { flex: 1; min-width: 200px; height: 6px; -webkit-appearance: none; appearance: none; background: #e5e7eb; border-radius: 3px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #2563eb; cursor: pointer; }
+  input[type=number], input[type=text], select { padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: 'SF Mono', Menlo, monospace; text-align: right; }
+  input[type=number] { width: 72px; }
+  .unit { font-size: 13px; color: #6b7280; }
+  .preset-row { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .preset-btn { padding: 4px 12px; font-size: 12px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #4b5563; cursor: pointer; font-weight: 500; }
+  .preset-btn:hover { background: #f3f4f6; }
+  .preset-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .mode-btn { padding: 4px 12px; font-size: 12px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; color: #4b5563; cursor: pointer; }
+  .mode-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .anchor-controls { display: flex; align-items: center; gap: 8px; }
+  .alloc-bar { display: flex; gap: 2px; height: 40px; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+  .alloc-seg { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; transition: width 0.3s ease; overflow: hidden; }
+  .alloc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center; }
+  .alloc-fund-label { font-size: 12px; color: #6b7280; }
+  .alloc-fund-val { font-size: 20px; font-weight: 700; }
+  .alloc-fund-dollar { font-size: 13px; color: #6b7280; margin-top: 2px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; text-align: center; }
+  .stat-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-val { font-size: 24px; font-weight: 700; color: #111827; }
+  .stat-unit { font-size: 13px; font-weight: 400; color: #6b7280; margin-left: 2px; }
+  .stat-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .chart-container { position: relative; width: 100%; height: 200px; }
+  .chart-bar-group { display: flex; align-items: flex-end; justify-content: space-around; height: 160px; padding: 0 20px; }
+  .chart-col { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 120px; }
+  .chart-bar { width: 50px; border-radius: 4px 4px 0 0; transition: height 0.3s ease; position: relative; min-height: 2px; }
+  .chart-bar-label { font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+  .chart-bar-xlabel { font-size: 11px; color: #6b7280; margin-top: 6px; }
+  .tbl-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .export-btn { padding: 4px 12px; font-size: 12px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+  .export-btn:hover { background: #1d4ed8; }
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align: left; padding: 8px; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
+  thead th.r { text-align: right; }
+  tbody td { padding: 6px 8px; border-bottom: 1px solid #f3f4f6; font-size: 12px; }
+  tbody tr:hover { background: #f9fafb; }
+  td.mono { font-family: 'SF Mono', Menlo, monospace; font-size: 11px; }
+  td.r { text-align: right; }
+  td.bold { font-weight: 600; }
+  .tag { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 999px; color: #fff; margin-right: 3px; font-weight: 600; }
+  .footer { text-align: center; font-size: 11px; color: #9ca3af; margin-top: 16px; }
+  .dollar-input { width: 130px; font-size: 14px; padding: 5px 10px; }
+  .net-highlight { color: #059669; }
+  @media (max-width: 800px) {
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    .fund-row { flex-direction: column; gap: 8px; }
+  }
+  @media (max-width: 500px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <div style="margin-bottom:24px">
+    <h1>TIPS ETF Portfolio Blender</h1>
+    <div class="subtitle">Blend STIP, DFIP, and LTPZ to target a weighted average maturity</div>
+  </div>
+  <div class="card" id="fundWams"></div>
+  <div class="card" id="controls"></div>
+  <div class="card" id="allocation"></div>
+  <div class="card" id="stats"></div>
+  <div class="card" id="chartCard">
+    <div class="card-label">Maturity Distribution</div>
+    <div class="chart-container"><div class="chart-bar-group" id="chart"></div></div>
+  </div>
+  <div class="card" id="tableCard"></div>
+  <div class="footer">Data as of 03/20/2026 | 912828N71, 912810FS2 treated as matured (0yr)</div>
+</div>
+
+<script>
+const COLORS = { STIP: '#3b82f6', DFIP: '#10b981', LTPZ: '#f59e0b' };
+const BUCKET_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const EXPENSE_RATIOS = { STIP: 0.03, DFIP: 0.11, LTPZ: 0.20 };
+
+const holdings = [
+  ['DFIP','Cash/Other',0.17],['DFIP','912828Z37',15.07],['DFIP','912828ZZ6',15.86],['DFIP','9128287D6',8.52],
+  ['DFIP','9128285W6',2.68],['DFIP','912810PZ5',4.73],['DFIP','91282CBF7',11.93],['DFIP','91282CDX6',4.97],
+  ['DFIP','91282CCM1',7.31],['DFIP','912810RA8',1.81],['DFIP','912810QV3',2.87],['DFIP','912810RL4',2.14],
+  ['DFIP','91282CGK1',1.45],['DFIP','912810RF7',1.58],['DFIP','91282CJY8',0.24],['DFIP','912810QF8',3.21],
+  ['DFIP','912810QP6',4.27],['DFIP','912810FQ6',5.76],['DFIP','912810FH6',5.44],
+  ['STIP','91282CNB3',5.57],['STIP','91282CLV1',5.39],['STIP','91282CKL4',5.24],['STIP','91282CJH5',5.18],
+  ['STIP','91282CFR7',4.98],['STIP','91282CGW5',4.86],['STIP','91282CEJ6',4.80],['STIP','91282CDC2',4.76],
+  ['STIP','912828ZZ6',4.64],['STIP','9128283R9',4.46],['STIP','9128282L3',4.32],['STIP','912828S50',4.23],
+  ['STIP','912828Z37',4.23],['STIP','912828N71',4.20],['STIP','912828V49',3.85],['STIP','912828Y38',3.83],
+  ['STIP','9128287D6',3.80],['STIP','91282CCA7',3.46],['STIP','9128285W6',3.30],['STIP','91282CPH8',2.83],
+  ['STIP','912810FH6',2.35],['STIP','912810PS1',2.03],['STIP','912810FS2',2.00],['STIP','912810FD5',1.99],
+  ['STIP','912810PV4',1.80],['STIP','912810PZ5',1.78],['STIP','Cash/Other',0.13],
+  ['LTPZ','912810RF7',10.43],['LTPZ','912810RR1',9.31],['LTPZ','912810QV3',9.13],['LTPZ','912810RL4',8.86],
+  ['LTPZ','912810RA8',8.58],['LTPZ','912810RW0',8.17],['LTPZ','912810SB5',7.60],['LTPZ','912810QP6',6.80],
+  ['LTPZ','912810TY4',6.42],['LTPZ','912810SG4',6.12],['LTPZ','912810SM1',4.21],['LTPZ','912810UH9',3.71],
+  ['LTPZ','912810SV1',3.69],['LTPZ','912810TE8',3.48],['LTPZ','912810TP3',3.17],['LTPZ','Cash/Other',0.33],
+];
+
+const universe = {
+  'Cash/Other':  { mat:'N/A',     yr:0,    cpn:0,    rytm:0,    rdur:0,    ytm:0 },
+  '912828N71':   { mat:'01/15/2026',yr:2026, cpn:0.625,rytm:0,   rdur:0,    ytm:0 },
+  '912810FS2':   { mat:'04/15/2028',yr:2028, cpn:2.00, rytm:1.34, rdur:1.97, ytm:2.06 },
+  '91282CCA7':   { mat:'04/15/2026',yr:2026, cpn:0.13, rytm:3.99, rdur:0.07, ytm:0.06 },
+  '912828S50':   { mat:'07/15/2026',yr:2026, cpn:0.13, rytm:-2.66,rdur:0.33, ytm:0.31 },
+  '91282CDC2':   { mat:'10/15/2026',yr:2026, cpn:0.13, rytm:-0.44,rdur:0.57, ytm:0.56 },
+  '912828V49':   { mat:'01/15/2027',yr:2027, cpn:0.38, rytm:0.79, rdur:0.82, ytm:0.82 },
+  '912810PS1':   { mat:'01/15/2027',yr:2027, cpn:2.38, rytm:0.84, rdur:0.81, ytm:0.82 },
+  '91282CEJ6':   { mat:'04/15/2027',yr:2027, cpn:0.13, rytm:1.20, rdur:1.06, ytm:1.06 },
+  '9128282L3':   { mat:'07/15/2027',yr:2027, cpn:0.38, rytm:0.85, rdur:1.31, ytm:1.31 },
+  '91282CFR7':   { mat:'10/15/2027',yr:2027, cpn:1.63, rytm:0.97, rdur:1.54, ytm:1.56 },
+  '9128283R9':   { mat:'01/15/2028',yr:2028, cpn:0.50, rytm:1.26, rdur:1.80, ytm:1.82 },
+  '912810PV4':   { mat:'01/15/2028',yr:2028, cpn:1.75, rytm:1.26, rdur:1.79, ytm:1.82 },
+  '91282CGW5':   { mat:'04/15/2028',yr:2028, cpn:1.25, rytm:1.34, rdur:2.03, ytm:2.06 },
+  '912810FD5':   { mat:'04/15/2028',yr:2028, cpn:3.63, rytm:1.34, rdur:1.97, ytm:2.06 },
+  '912828Y38':   { mat:'07/15/2028',yr:2028, cpn:0.75, rytm:1.13, rdur:2.29, ytm:2.31 },
+  '91282CJH5':   { mat:'10/15/2028',yr:2028, cpn:2.38, rytm:1.19, rdur:2.47, ytm:2.57 },
+  '9128285W6':   { mat:'01/15/2029',yr:2029, cpn:0.88, rytm:1.32, rdur:2.77, ytm:2.82 },
+  '912810PZ5':   { mat:'01/15/2029',yr:2029, cpn:2.50, rytm:1.34, rdur:2.72, ytm:2.82 },
+  '91282CKL4':   { mat:'04/15/2029',yr:2029, cpn:2.13, rytm:1.42, rdur:2.94, ytm:3.06 },
+  '912810FH6':   { mat:'04/15/2029',yr:2029, cpn:3.88, rytm:1.43, rdur:2.87, ytm:3.06 },
+  '9128287D6':   { mat:'07/15/2029',yr:2029, cpn:0.25, rytm:1.28, rdur:3.29, ytm:3.31 },
+  '91282CLV1':   { mat:'10/15/2029',yr:2029, cpn:1.63, rytm:1.33, rdur:3.44, ytm:3.56 },
+  '912828Z37':   { mat:'01/15/2030',yr:2030, cpn:0.13, rytm:1.43, rdur:3.79, ytm:3.82 },
+  '91282CNB3':   { mat:'04/15/2030',yr:2030, cpn:1.63, rytm:1.51, rdur:3.90, ytm:4.06 },
+  '912828ZZ6':   { mat:'07/15/2030',yr:2030, cpn:0.13, rytm:1.41, rdur:4.28, ytm:4.31 },
+  '91282CPH8':   { mat:'10/15/2030',yr:2030, cpn:1.13, rytm:1.46, rdur:4.41, ytm:4.56 },
+  '91282CBF7':   { mat:'01/15/2031',yr:2031, cpn:0.13, rytm:1.54, rdur:4.77, ytm:4.82 },
+  '91282CCM1':   { mat:'07/15/2031',yr:2031, cpn:0.13, rytm:1.52, rdur:5.27, ytm:5.31 },
+  '91282CDX6':   { mat:'01/15/2032',yr:2032, cpn:0.13, rytm:1.66, rdur:5.75, ytm:5.82 },
+  '912810FQ6':   { mat:'04/15/2032',yr:2032, cpn:3.38, rytm:1.68, rdur:5.45, ytm:6.06 },
+  '91282CGK1':   { mat:'01/15/2033',yr:2033, cpn:1.13, rytm:1.78, rdur:6.51, ytm:6.82 },
+  '91282CJY8':   { mat:'01/15/2034',yr:2034, cpn:1.75, rytm:1.88, rdur:7.25, ytm:7.82 },
+  '91282CLE9':   { mat:'07/15/2034',yr:2034, cpn:1.88, rytm:1.89, rdur:7.65, ytm:8.31 },
+  '91282CML2':   { mat:'01/15/2035',yr:2035, cpn:2.13, rytm:1.99, rdur:7.99, ytm:8.82 },
+  '91282CNS6':   { mat:'07/15/2035',yr:2035, cpn:1.88, rytm:2.00, rdur:8.48, ytm:9.31 },
+  '912810QF8':   { mat:'02/15/2040',yr:2040, cpn:2.13, rytm:2.36, rdur:11.92,ytm:13.90 },
+  '912810QP6':   { mat:'02/15/2041',yr:2041, cpn:2.13, rytm:2.44, rdur:12.62,ytm:14.90 },
+  '912810QV3':   { mat:'02/15/2042',yr:2042, cpn:0.75, rytm:2.57, rdur:14.66,ytm:15.90 },
+  '912810RA8':   { mat:'02/15/2043',yr:2043, cpn:0.63, rytm:2.61, rdur:15.67,ytm:16.90 },
+  '912810RF7':   { mat:'02/15/2044',yr:2044, cpn:1.38, rytm:2.65, rdur:15.44,ytm:17.90 },
+  '912810RL4':   { mat:'02/15/2045',yr:2045, cpn:0.75, rytm:2.70, rdur:17.11,ytm:18.90 },
+  '912810RR1':   { mat:'02/15/2046',yr:2046, cpn:1.00, rytm:2.73, rdur:17.45,ytm:19.90 },
+  '912810RW0':   { mat:'02/15/2047',yr:2047, cpn:0.88, rytm:2.75, rdur:18.43,ytm:20.90 },
+  '912810SB5':   { mat:'02/15/2048',yr:2048, cpn:1.00, rytm:2.76, rdur:18.91,ytm:21.90 },
+  '912810SG4':   { mat:'02/15/2049',yr:2049, cpn:1.00, rytm:2.77, rdur:19.63,ytm:22.90 },
+  '912810SM1':   { mat:'02/15/2050',yr:2050, cpn:0.25, rytm:2.78, rdur:22.58,ytm:23.90 },
+  '912810SV1':   { mat:'02/15/2051',yr:2051, cpn:0.13, rytm:2.78, rdur:23.99,ytm:24.90 },
+  '912810TE8':   { mat:'02/15/2052',yr:2052, cpn:0.13, rytm:2.77, rdur:24.92,ytm:25.90 },
+  '912810TP3':   { mat:'02/15/2053',yr:2053, cpn:1.50, rytm:2.77, rdur:21.04,ytm:26.90 },
+  '912810TY4':   { mat:'02/15/2054',yr:2054, cpn:2.13, rytm:2.77, rdur:20.31,ytm:27.90 },
+  '912810UH9':   { mat:'02/15/2055',yr:2055, cpn:2.38, rytm:2.77, rdur:20.37,ytm:28.90 },
+};
+
+// State
+let state = { target: 8, mode: '2fund', anchor: 'DFIP', anchorPct: 30, dollars: 100000 };
+
+// Format dollars
+function fmtDollar(v) {
+  if (v >= 1e6) return '$' + (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return '$' + (v/1e3).toFixed(v >= 1e4 ? 1 : 2) + 'K';
+  return '$' + v.toFixed(2);
+}
+
+function parseDollar(str) {
+  const cleaned = str.replace(/[^0-9.]/g, '');
+  return parseFloat(cleaned) || 0;
+}
+
+function formatDollarInput(v) {
+  if (!v || v === 0) return '';
+  return v.toLocaleString('en-US');
+}
+
+// Calculations
+function calcFundStats(fund) {
+  const rows = holdings.filter(h => h[0] === fund);
+  let wam = 0, wRytm = 0, wRdur = 0, wCpn = 0;
+  rows.forEach(([, cusip, wt]) => {
+    const u = universe[cusip]; if (!u) return;
+    const w = wt / 100;
+    wam += w * u.ytm; wRytm += w * u.rytm; wRdur += w * u.rdur; wCpn += w * u.cpn;
+  });
+  return { wam, rytm: wRytm, rdur: wRdur, cpn: wCpn, er: EXPENSE_RATIOS[fund] };
+}
+
+const fundStats = { STIP: calcFundStats('STIP'), DFIP: calcFundStats('DFIP'), LTPZ: calcFundStats('LTPZ') };
+const sorted = ['STIP','DFIP','LTPZ'].sort((a,b) => fundStats[a].wam - fundStats[b].wam);
+
+function solve2Fund(target) {
+  const wams = sorted.map(f => fundStats[f].wam);
+  if (target <= wams[0]) return { [sorted[0]]: 100, [sorted[1]]: 0, [sorted[2]]: 0 };
+  if (target >= wams[2]) return { [sorted[0]]: 0, [sorted[1]]: 0, [sorted[2]]: 100 };
+  if (target <= wams[1]) {
+    const w0 = (wams[1] - target) / (wams[1] - wams[0]);
+    return { [sorted[0]]: +(w0*100).toFixed(2), [sorted[1]]: +((1-w0)*100).toFixed(2), [sorted[2]]: 0 };
+  }
+  const w1 = (wams[2] - target) / (wams[2] - wams[1]);
+  return { [sorted[0]]: 0, [sorted[1]]: +(w1*100).toFixed(2), [sorted[2]]: +((1-w1)*100).toFixed(2) };
+}
+
+function solve3Fund(target, anchorFund, anchorPct) {
+  const others = ['STIP','DFIP','LTPZ'].filter(f => f !== anchorFund);
+  const remaining = 100 - anchorPct;
+  if (remaining <= 0) return { [anchorFund]: 100, [others[0]]: 0, [others[1]]: 0 };
+  const adjTarget = (target - (anchorPct/100) * fundStats[anchorFund].wam) / (remaining/100);
+  const w0 = fundStats[others[0]].wam, w1 = fundStats[others[1]].wam;
+  const lo = Math.min(w0,w1), hi = Math.max(w0,w1);
+  const loFund = w0 < w1 ? others[0] : others[1];
+  const hiFund = w0 < w1 ? others[1] : others[0];
+  if (adjTarget <= lo) return { [anchorFund]: anchorPct, [loFund]: remaining, [hiFund]: 0 };
+  if (adjTarget >= hi) return { [anchorFund]: anchorPct, [loFund]: 0, [hiFund]: remaining };
+  const pLo = (hi - adjTarget) / (hi - lo);
+  return { [anchorFund]: anchorPct, [loFund]: +(pLo * remaining).toFixed(2), [hiFund]: +((1 - pLo) * remaining).toFixed(2) };
+}
+
+function blendPortfolio(weights) {
+  const combined = {};
+  holdings.forEach(([fund, cusip, wt]) => {
+    const contrib = (weights[fund] / 100) * (wt / 100);
+    if (!combined[cusip]) combined[cusip] = { cusip, weight: 0, sources: {} };
+    combined[cusip].weight += contrib;
+    combined[cusip].sources[fund] = (combined[cusip].sources[fund] || 0) + (weights[fund] / 100) * wt;
+  });
+  return Object.values(combined).filter(c => c.weight > 0.00005)
+    .sort((a, b) => (universe[a.cusip]?.ytm || 0) - (universe[b.cusip]?.ytm || 0));
+}
+
+function portfolioStats(blend, weights) {
+  let wam = 0, rytm = 0, rdur = 0;
+  blend.forEach(({ cusip, weight }) => {
+    const u = universe[cusip]; if (!u) return;
+    wam += weight * u.ytm; rytm += weight * u.rytm; rdur += weight * u.rdur;
+  });
+  // Weighted expense ratio
+  let wtdER = 0;
+  ['STIP','DFIP','LTPZ'].forEach(f => { wtdER += (weights[f] / 100) * EXPENSE_RATIOS[f]; });
+  const netYtm = rytm - wtdER;
+  return { wam, rytm, rdur, wtdER, netYtm };
+}
+
+function maturityBuckets(blend) {
+  const b = { '0-2yr': 0, '2-5yr': 0, '5-10yr': 0, '10-20yr': 0, '20-30yr': 0 };
+  blend.forEach(({ cusip, weight }) => {
+    const ytm = universe[cusip]?.ytm || 0;
+    if (ytm < 2) b['0-2yr'] += weight;
+    else if (ytm < 5) b['2-5yr'] += weight;
+    else if (ytm < 10) b['5-10yr'] += weight;
+    else if (ytm < 20) b['10-20yr'] += weight;
+    else b['20-30yr'] += weight;
+  });
+  return Object.entries(b).map(([name, value]) => ({ name, value: +(value * 100).toFixed(2) }));
+}
+
+function exportCSV(blend, weights, target, stats, dollars) {
+  let csv = 'CUSIP,Maturity,Coupon,Weight,Dollar Amount,Real YTM,Real Duration,Sources\n';
+  blend.forEach(({ cusip, weight, sources }) => {
+    const u = universe[cusip] || {};
+    const src = Object.entries(sources).map(([f,w]) => f + ':' + w.toFixed(2) + '%').join(' + ');
+    const dolAmt = dollars > 0 ? (weight * dollars).toFixed(2) : '';
+    csv += cusip + ',' + (u.mat||'') + ',' + (u.cpn||'') + ',' + (weight*100).toFixed(2) + '%,' + dolAmt + ',' + (u.rytm||'') + ',' + (u.rdur||'') + ',"' + src + '"\n';
+  });
+  csv += '\nSummary\n';
+  csv += 'WAM,' + stats.wam.toFixed(2) + ' yrs\n';
+  csv += 'Real YTM (Gross),' + stats.rytm.toFixed(2) + '%\n';
+  csv += 'Wtd Expense Ratio,' + stats.wtdER.toFixed(3) + '%\n';
+  csv += 'Real YTM (Net),' + stats.netYtm.toFixed(2) + '%\n';
+  csv += 'Real Duration,' + stats.rdur.toFixed(2) + '\n';
+  if (dollars > 0) csv += 'Portfolio Size,$' + dollars.toLocaleString('en-US') + '\n';
+  csv += '\nFund Weights\n';
+  ['STIP','DFIP','LTPZ'].forEach(f => {
+    const d = dollars > 0 ? ',$' + (weights[f]/100*dollars).toFixed(2) : '';
+    csv += f + ',' + weights[f].toFixed(2) + '%' + d + ',ER ' + EXPENSE_RATIOS[f].toFixed(2) + '%\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'TIPS_Blend_WAM' + target.toFixed(1) + '.csv';
+  a.click();
+}
+
+// Rendering
+function render() {
+  const { target, mode, anchor, anchorPct, dollars } = state;
+  const weights = mode === '2fund' ? solve2Fund(target) : solve3Fund(target, anchor, anchorPct);
+  const blend = blendPortfolio(weights);
+  const stats = portfolioStats(blend, weights);
+  const buckets = maturityBuckets(blend);
+
+  // Fund WAMs
+  document.getElementById('fundWams').innerHTML = '<div class="card-label">Fund WAMs</div><div class="fund-row">' +
+    ['STIP','DFIP','LTPZ'].map(f =>
+      '<div class="fund-chip"><span class="fund-dot" style="background:' + COLORS[f] + '"></span>' +
+      '<span class="fund-name">' + f + '</span>' +
+      '<span>' + fundStats[f].wam.toFixed(2) + ' yrs</span>' +
+      '<span class="fund-detail">| YTM ' + fundStats[f].rytm.toFixed(2) + '% | Dur ' + fundStats[f].rdur.toFixed(2) + ' | ER ' + EXPENSE_RATIOS[f].toFixed(2) + '%</span></div>'
+    ).join('') + '</div>';
+
+  // Controls
+  const minWAM = fundStats[sorted[0]].wam;
+  const maxWAM = fundStats[sorted[2]].wam;
+  let ctrlHTML = '<div class="ctrl-row"><span class="ctrl-label">Target WAM:</span>' +
+    '<input type="range" id="wamSlider" min="' + Math.floor(minWAM) + '" max="' + Math.ceil(maxWAM) + '" step="0.1" value="' + target + '">' +
+    '<input type="number" id="wamNum" min="0" max="30" step="0.1" value="' + target + '">' +
+    '<span class="unit">years</span></div>';
+  ctrlHTML += '<div class="preset-row">' + [3,5,7,10,15,20].map(y =>
+    '<button class="preset-btn' + (Math.abs(target-y)<0.05 ? ' active' : '') + '" data-yr="' + y + '">' + y + 'yr</button>'
+  ).join('') + '</div>';
+  ctrlHTML += '<div class="ctrl-row"><span class="ctrl-label">Mode:</span>' +
+    '<button class="mode-btn' + (mode==='2fund' ? ' active' : '') + '" data-mode="2fund">2-Fund (Auto)</button>' +
+    '<button class="mode-btn' + (mode==='3fund' ? ' active' : '') + '" data-mode="3fund">3-Fund (Anchor)</button>';
+  if (mode === '3fund') {
+    ctrlHTML += '<div class="anchor-controls">' +
+      '<select id="anchorSelect"><option value="STIP"' + (anchor==='STIP'?' selected':'') + '>Anchor STIP</option>' +
+      '<option value="DFIP"' + (anchor==='DFIP'?' selected':'') + '>Anchor DFIP</option>' +
+      '<option value="LTPZ"' + (anchor==='LTPZ'?' selected':'') + '>Anchor LTPZ</option></select>' +
+      '<span class="unit">at</span><input type="number" id="anchorPctNum" min="0" max="100" step="1" value="' + anchorPct + '" style="width:60px">' +
+      '<span class="unit">%</span></div>';
+  }
+  ctrlHTML += '</div>';
+  ctrlHTML += '<div class="ctrl-row"><span class="ctrl-label">Portfolio $:</span>' +
+    '<input type="text" id="dollarInput" class="dollar-input" value="' + (dollars > 0 ? formatDollarInput(dollars) : '') + '" placeholder="e.g. 500,000">' +
+    '</div>';
+  document.getElementById('controls').innerHTML = ctrlHTML;
+
+  // Allocation
+  let allocHTML = '<div class="card-label">Fund Allocation</div><div class="alloc-bar">';
+  ['STIP','DFIP','LTPZ'].forEach(f => {
+    if (weights[f] > 0) {
+      const label = weights[f] >= 5 ? (f + ' ' + weights[f].toFixed(1) + '%') : weights[f] >= 2 ? (weights[f].toFixed(0) + '%') : '';
+      allocHTML += '<div class="alloc-seg" style="width:' + weights[f] + '%;background:' + COLORS[f] + ';min-width:' + (weights[f]>0?40:0) + 'px">' + label + '</div>';
+    }
+  });
+  allocHTML += '</div><div class="alloc-grid">';
+  ['STIP','DFIP','LTPZ'].forEach(f => {
+    const dolStr = dollars > 0 ? fmtDollar(weights[f] / 100 * dollars) : '';
+    allocHTML += '<div><div class="alloc-fund-label">' + f + ' <span style="font-size:10px;color:#9ca3af">(ER ' + EXPENSE_RATIOS[f].toFixed(2) + '%)</span></div>' +
+      '<div class="alloc-fund-val" style="color:' + (weights[f]>0?COLORS[f]:'#9ca3af') + '">' + weights[f].toFixed(1) + '%</div>' +
+      (dolStr ? '<div class="alloc-fund-dollar">' + dolStr + '</div>' : '') +
+      '</div>';
+  });
+  allocHTML += '</div>';
+  document.getElementById('allocation').innerHTML = allocHTML;
+
+  // Stats
+  let statsHTML = '<div class="card-label">Blended Portfolio Stats</div><div class="stats-grid">' +
+    '<div><div class="stat-label">Wtd Avg Maturity</div><div class="stat-val">' + stats.wam.toFixed(2) + '<span class="stat-unit">yrs</span></div></div>' +
+    '<div><div class="stat-label">Real YTM (Gross)</div><div class="stat-val">' + stats.rytm.toFixed(2) + '<span class="stat-unit">%</span></div></div>' +
+    '<div><div class="stat-label">Wtd Expense Ratio</div><div class="stat-val">' + stats.wtdER.toFixed(3) + '<span class="stat-unit">%</span></div></div>' +
+    '<div><div class="stat-label">Real YTM (Net)</div><div class="stat-val net-highlight">' + stats.netYtm.toFixed(2) + '<span class="stat-unit">%</span></div>' +
+    (dollars > 0 ? '<div class="stat-sub">' + fmtDollar(stats.netYtm / 100 * dollars) + '/yr</div>' : '') + '</div>' +
+    '<div><div class="stat-label">Real Duration</div><div class="stat-val">' + stats.rdur.toFixed(2) + '<span class="stat-unit">yrs</span></div></div>' +
+    '</div>';
+  if (dollars > 0) {
+    statsHTML += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f3f4f6;display:flex;gap:32px;justify-content:center">' +
+      '<div style="text-align:center"><div class="stat-label">Portfolio Size</div><div style="font-size:20px;font-weight:700">' + fmtDollar(dollars) + '</div></div>' +
+      '<div style="text-align:center"><div class="stat-label">Holdings</div><div style="font-size:20px;font-weight:700">' + blend.length + '</div></div>' +
+      '</div>';
+  }
+  document.getElementById('stats').innerHTML = statsHTML;
+
+  // Chart
+  const maxBucket = Math.max(...buckets.map(b => b.value), 1);
+  document.getElementById('chart').innerHTML = buckets.map((b, i) => {
+    const dolLabel = dollars > 0 ? '<div style="font-size:10px;color:#6b7280">' + fmtDollar(b.value / 100 * dollars) + '</div>' : '';
+    return '<div class="chart-col"><div class="chart-bar-label">' + b.value.toFixed(1) + '%</div>' +
+      dolLabel +
+      '<div class="chart-bar" style="height:' + (b.value / maxBucket * 130) + 'px;background:' + BUCKET_COLORS[i] + '"></div>' +
+      '<div class="chart-bar-xlabel">' + b.name + '</div></div>';
+  }).join('');
+
+  // Table
+  let tblHTML = '<div class="tbl-header"><div class="card-label" style="margin-bottom:0">Holdings Detail</div>' +
+    '<button class="export-btn" id="exportBtn">Export CSV</button></div><div class="tbl-wrap"><table><thead><tr>' +
+    '<th>CUSIP</th><th>Maturity</th><th class="r">Coupon</th><th class="r">Weight</th>' +
+    (dollars > 0 ? '<th class="r">$ Amount</th>' : '') +
+    '<th class="r">Real YTM</th><th class="r">Real Dur</th><th>Sources</th></tr></thead><tbody>';
+  blend.forEach(({ cusip, weight, sources }) => {
+    const u = universe[cusip] || {};
+    let tags = '';
+    Object.entries(sources).forEach(([f, w]) => {
+      tags += '<span class="tag" style="background:' + COLORS[f] + '">' + f + ' ' + w.toFixed(1) + '%</span>';
+    });
+    tblHTML += '<tr><td class="mono">' + cusip + '</td><td>' + (u.mat||'') + '</td>' +
+      '<td class="r">' + (u.cpn != null ? u.cpn.toFixed(2) + '%' : '') + '</td>' +
+      '<td class="r bold">' + (weight * 100).toFixed(2) + '%</td>' +
+      (dollars > 0 ? '<td class="r">' + fmtDollar(weight * dollars) + '</td>' : '') +
+      '<td class="r">' + (u.rytm != null ? u.rytm.toFixed(2) + '%' : '') + '</td>' +
+      '<td class="r">' + (u.rdur != null ? u.rdur.toFixed(2) : '') + '</td>' +
+      '<td>' + tags + '</td></tr>';
+  });
+  tblHTML += '</tbody></table></div>';
+  document.getElementById('tableCard').innerHTML = tblHTML;
+
+  // Bind events
+  document.getElementById('wamSlider').addEventListener('input', e => { state.target = +e.target.value; render(); });
+  document.getElementById('wamNum').addEventListener('change', e => { state.target = Math.max(0, Math.min(30, +e.target.value)); render(); });
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => { state.target = +btn.dataset.yr; render(); });
+  });
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => { state.mode = btn.dataset.mode; render(); });
+  });
+  if (document.getElementById('anchorSelect')) {
+    document.getElementById('anchorSelect').addEventListener('change', e => { state.anchor = e.target.value; render(); });
+  }
+  if (document.getElementById('anchorPctNum')) {
+    document.getElementById('anchorPctNum').addEventListener('change', e => { state.anchorPct = Math.max(0, Math.min(100, +e.target.value)); render(); });
+  }
+  document.getElementById('dollarInput').addEventListener('change', e => {
+    state.dollars = parseDollar(e.target.value);
+    render();
+  });
+  document.getElementById('exportBtn').addEventListener('click', () => exportCSV(blend, weights, target, stats, dollars));
+}
+
+render();
+</script>
+</body>
+</html>
